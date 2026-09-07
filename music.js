@@ -7,6 +7,7 @@ const {
   VoiceConnectionStatus,
   StreamType,
 } = require('@discordjs/voice');
+const { PermissionsBitField } = require('discord.js');
 const pdl = require('play-dl');
 
 const players = new Map(); // guildId -> player state
@@ -25,27 +26,51 @@ function setupPlayer(guild, connection) {
   };
 
   player.on(AudioPlayerStatus.Idle, () => playNext(guild, data));
-  player.on('error', (err) => console.error('Audio player error:', err.message));
+  player.on('error', (err) => {
+    console.error('Audio player error:', err.message);
+    // Try to keep the queue moving past a bad track.
+    if (data.player.state.status !== AudioPlayerStatus.Playing) playNext(guild, data);
+  });
 
+  connection.on('error', (err) => console.error('Voice connection error:', err.message));
   connection.subscribe(player);
   players.set(guild.id, data);
   return data;
 }
 
-function ensureConnection(voiceChannel) {
+async function ensureConnection(voiceChannel) {
   const guild = voiceChannel.guild;
+  const me = guild.members.me;
+  if (me) {
+    const perms = voiceChannel.permissionsFor(me);
+    if (perms && !perms.has(PermissionsBitField.Flags.Connect)) {
+      throw new Error('I do not have **Connect** permission in that voice channel.');
+    }
+    if (perms && !perms.has(PermissionsBitField.Flags.Speak)) {
+      throw new Error('I do not have **Speak** permission in that voice channel.');
+    }
+  }
+
   let data = players.get(guild.id);
   if (data && data.connection) {
     const st = data.connection.state.status;
-    if (st === VoiceConnectionStatus.Ready || st === VoiceConnectionStatus.Signalling) return data;
+    if (st === VoiceConnectionStatus.Ready) return data;
+    if (st === VoiceConnectionStatus.Signalling) {
+      try {
+        await entersState(data.connection, VoiceConnectionStatus.Ready, 30000);
+        return data;
+      } catch {
+        // fall through and rejoin
+      }
+    }
     data.connection.destroy();
     players.delete(guild.id);
   }
   const connection = joinVoiceChannel({
     channelId: voiceChannel.id,
     guildId: guild.id,
-    adapterCreator: guild.voiceAdapterCreator,
     selfDeaf: true,
+    adapterCreator: guild.voiceAdapterCreator,
   });
   return setupPlayer(guild, connection);
 }
@@ -94,13 +119,20 @@ async function resolveQuery(query) {
 // Play a query in the given voice channel. If something is already playing,
 // it is added to the queue.
 async function play(guild, voiceChannel, query, textChannel) {
-  const data = ensureConnection(voiceChannel);
+  let data;
+  try {
+    data = await ensureConnection(voiceChannel);
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
   data.textChannel = textChannel;
   try {
-    await entersState(data.connection, VoiceConnectionStatus.Ready, 20000);
+    await entersState(data.connection, VoiceConnectionStatus.Ready, 30000);
   } catch (e) {
     console.error('Could not join voice in time:', e.message);
-    return { ok: false, message: 'Could not join the voice channel in time.' };
+    if (data.connection) data.connection.destroy();
+    players.delete(guild.id);
+    return { ok: false, message: 'Could not join the voice channel in time. Make sure the bot has Connect/Speak permission, and note that voice may be blocked on some free hosts (Replit).' };
   }
 
   let items;

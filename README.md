@@ -143,10 +143,21 @@ Every command also works with the prefix (default `!`):
 | `!play <url or song name>` | Play YouTube video/playlist or search. |
 | `!stop` / `!skip` / `!leave` | Music controls. |
 | `!volume <0-100>` | Set music volume. |
+| `!poll <question>` or `!poll question op1, op2` | Create a poll with reactions. |
+| `!rank` / `!leaderboard` | XP level & top 10. |
+| `!8ball`, `!dice`, `!coin`, `!rps`, `!slap`, `!hug` | Fun commands. |
 | `!setup notifications #channel` | Set stream alert channel. |
 | `!setup chatbridge #channel` | Set Twitch chat bridge channel. |
 | `!setup kickchat #channel` | Set Kick chat bridge channel. |
+| `!setup welcome #channel` | Set welcome-message channel. |
+| `!setup leave #channel` | Set goodbye-message channel. |
+| `!setwelcome <text>` / `!setleave <text>` | Customize the messages ({user},{tag},{guild},{count}). |
 | `!setup reset` | Reset this server's settings. |
+| `!rr setup` / `!rr add <msgid> <emoji> <@role>` | Reaction roles. |
+| `!cc add <name> <response>` / `!cc remove <name>` | Custom commands. |
+| `!auto add <#channel> <hours> <message>` | Scheduled announcements. |
+| `!automod on/off add/remove/list` | Word filter + spam protection. |
+| `!help` | Command list. |
 
 ## Project structure
 
@@ -160,5 +171,10 @@ chatbridge.js    - Twitch <-> Discord chat relay
 kickbridge.js    - Kick -> Discord chat relay (read-only)
 music.js         - Voice connection + YouTube playback (via /play)
 commands.js      - Slash commands
-prefix.js        - Prefix commands (!comand)
+prefix.js        - Prefix commands (!command)
+automod.js       - Word filter + spam protection
+level.js         - XP / leveling system
+welcome.js       - Welcome / goodbye messages
+scheduler.js     - Scheduled announcements
+reactionroles.js - Reaction roles
 ```

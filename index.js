@@ -10,11 +10,12 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildModeration,
     GatewayIntentBits.GuildVoiceStates,
   ],
-  partials: [Partials.Message, Partials.Channel],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
 });
 
 client.once(Events.ClientReady, async () => {
@@ -36,10 +37,12 @@ client.once(Events.ClientReady, async () => {
   };
   const type = typeMap[config.activityType] || ActivityType.Watching;
   const status = statusMap[config.status] || PresenceUpdateStatus.DoNotDisturb;
+  const activity = { name: config.activity, type };
+  if (type === ActivityType.Streaming && config.activityUrl) activity.url = config.activityUrl;
   try {
     await client.user.setPresence({
       status,
-      activities: [{ name: config.activity, type }],
+      activities: [activity],
     });
   } catch (e) {
     console.error('Could not set presence:', e.message);
@@ -48,30 +51,75 @@ client.once(Events.ClientReady, async () => {
   const commands = require('./commands');
   commands.register(client).catch((e) => console.error('Command register error:', e));
 
+  require('./scheduler').start(client, storage);
+
   const notifications = require('./notifications');
-  notifications.start(client, config, storage);
+  try {
+    notifications.start(client, config, storage);
+  } catch (e) {
+    console.error('Notifications error:', e.message);
+  }
 
   if (config.twitchLogin) {
-    const chatbridge = require('./chatbridge');
-    chatbridge.start(client, config, storage);
+    try {
+      const chatbridge = require('./chatbridge');
+      chatbridge.start(client, config, storage);
+    } catch (e) {
+      console.error('Twitch chat bridge error:', e.message);
+    }
   } else {
     console.warn('TWITCH_LOGIN not set - Twitch chat bridge disabled.');
   }
 
   if (config.kickChannel) {
-    const kickbridge = require('./kickbridge');
-    kickbridge.start(client, config, storage);
+    try {
+      const kickbridge = require('./kickbridge');
+      kickbridge.start(client, config, storage);
+    } catch (e) {
+      console.error('Kick chat bridge error:', e.message);
+    }
   } else {
     console.warn('KICK_CHANNEL not set - Kick chat bridge disabled.');
   }
+});
+
+// Prevent a single async error from killing the whole bot.
+// Hosting platforms (Replit) often fail to launch helper browsers
+// (e.g. puppeteer for Kick); log it instead of crashing.
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason && reason.message ? reason.message : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err && err.message ? err.message : err);
 });
 
 client.on(Events.InteractionCreate, (interaction) => {
   require('./commands').handleInteraction(interaction, client, config, storage);
 });
 
-client.on(Events.MessageCreate, (message) => {
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    const blocked = await require('./automod').handleMessage(message, config, storage);
+    if (blocked) return;
+  } catch { /* never let automod crash a command */ }
+  require('./level').handleMessage(message, storage);
   require('./prefix').handleMessage(message, client, config, storage);
+});
+
+client.on(Events.GuildMemberAdd, (member) => {
+  require('./welcome').handleMemberAdd(member, storage);
+});
+
+client.on(Events.GuildMemberRemove, (member) => {
+  require('./welcome').handleMemberRemove(member, storage);
+});
+
+client.on(Events.MessageReactionAdd, (reaction, user) => {
+  require('./reactionroles').handleReaction(reaction, user, storage, true);
+});
+
+client.on(Events.MessageReactionRemove, (reaction, user) => {
+  require('./reactionroles').handleReaction(reaction, user, storage, false);
 });
 
 // =========================================================

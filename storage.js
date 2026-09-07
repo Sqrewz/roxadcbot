@@ -28,4 +28,8 @@ function guild(guildId) {
   return data.guilds[guildId];
 }
 
-module.exports = { load, save, guild };
+function all() {
+  return data.guilds;
+}
+
+module.exports = { load, save, guild, all };

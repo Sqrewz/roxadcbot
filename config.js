@@ -24,6 +24,8 @@ module.exports = {
   // Presence / status
   activity: process.env.ACTIVITY || 'RoxaTheChief',
   activityType: process.env.ACTIVITY_TYPE || 'Watching',
+  // Required for the purple "Streaming" badge: your stream URL (e.g. https://www.twitch.tv/mystream)
+  activityUrl: process.env.ACTIVITY_URL || '',
   // Status: online | idle | dnd | invisible
   status: process.env.STATUS || 'dnd',
 };
