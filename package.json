@@ -1,0 +1,26 @@
+{
+  "name": "stream-community-bot",
+  "version": "1.0.0",
+  "description": "A community Discord bot for your streaming server: Twitch stream notifications, Twitch<->Discord chat bridge, and moderation tools.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "tmi.js": "^1.8.5",
+    "node-fetch": "^2.7.0",
+    "@retconned/kick-js": "^0.5.4",
+    "@discordjs/voice": "^0.18.0",
+    "opusscript": "^0.1.1",
+    "play-dl": "^1.9.7",
+    "libsodium-wrappers": "^0.7.15",
+    "ffmpeg-static": "^5.2.0"
+  }
+}
