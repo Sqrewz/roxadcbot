@@ -139,7 +139,7 @@ async function handleInteraction(interaction, client, config, storage) {
 
       case 'play': {
         const music = require('./music');
-        const query = interaction.options.getString('url');
+        const query = interaction.options.getString('query');
         const voice = interaction.member.voice.channel;
         if (!voice) {
           return interaction.reply({ content: 'You need to be in a voice channel first.', ephemeral: true });

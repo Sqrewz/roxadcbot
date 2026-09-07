@@ -127,7 +127,26 @@ Note: Replit stops free repls when the tab is closed for a while; UptimeRobot's 
 | `MOD_ROLE_ID` | Role ID allowed to use moderation commands (empty = everyone). |
 | `REPORT_CHANNEL_ID` | Channel where `/report` messages go. |
 | `KICK_CHANNEL` | Your Kick channel name (lowercase) whose chat to mirror. Reading needs no credentials. |
+| `PREFIX` | Prefix for text commands, default `!` (e.g. `!play`, `!ping`). |
 | `PORT` | Port for the keep-alive server (default 3000; Replit sets this automatically). |
+
+## Prefix commands
+
+Every command also works with the prefix (default `!`):
+
+| Command | Description |
+| --- | --- |
+| `!ping` | Bot latency. |
+| `!say <message>` | Make the bot say something. |
+| `!purge <amount>` | Delete messages (1-100). Requires mod role. |
+| `!report @user [reason]` | Report a user. |
+| `!play <url or song name>` | Play YouTube video/playlist or search. |
+| `!stop` / `!skip` / `!leave` | Music controls. |
+| `!volume <0-100>` | Set music volume. |
+| `!setup notifications #channel` | Set stream alert channel. |
+| `!setup chatbridge #channel` | Set Twitch chat bridge channel. |
+| `!setup kickchat #channel` | Set Kick chat bridge channel. |
+| `!setup reset` | Reset this server's settings. |
 
 ## Project structure
 
@@ -141,4 +160,5 @@ chatbridge.js    - Twitch <-> Discord chat relay
 kickbridge.js    - Kick -> Discord chat relay (read-only)
 music.js         - Voice connection + YouTube playback (via /play)
 commands.js      - Slash commands
+prefix.js        - Prefix commands (!comand)
 ```

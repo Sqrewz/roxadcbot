@@ -18,7 +18,12 @@ module.exports = {
 
   kickChannel: (process.env.KICK_CHANNEL || '').toLowerCase(),
 
+  // Prefix for text commands (e.g. !play)
+  prefix: process.env.PREFIX || '!',
+
   // Presence / status
   activity: process.env.ACTIVITY || 'RoxaTheChief',
   activityType: process.env.ACTIVITY_TYPE || 'Watching',
+  // Status: online | idle | dnd | invisible
+  status: process.env.STATUS || 'dnd',
 };

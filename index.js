@@ -17,10 +17,10 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 });
 
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
-  // Presence: visible, "Watching RoxaTheChief", online (or quieter if set).
+  // Presence: visible, activity text, status per config (default Do Not Disturb).
   const typeMap = {
     Watching: ActivityType.Watching,
     Playing: ActivityType.Playing,
@@ -28,11 +28,22 @@ client.once(Events.ClientReady, () => {
     Streaming: ActivityType.Streaming,
     Competing: ActivityType.Competing,
   };
+  const statusMap = {
+    online: PresenceUpdateStatus.Online,
+    idle: PresenceUpdateStatus.Idle,
+    dnd: PresenceUpdateStatus.DoNotDisturb,
+    invisible: PresenceUpdateStatus.Invisible,
+  };
   const type = typeMap[config.activityType] || ActivityType.Watching;
-  client.user.setPresence({
-    status: PresenceUpdateStatus.Online,
-    activities: [{ name: config.activity, type }],
-  }).catch((e) => console.error('Could not set presence:', e.message));
+  const status = statusMap[config.status] || PresenceUpdateStatus.DoNotDisturb;
+  try {
+    await client.user.setPresence({
+      status,
+      activities: [{ name: config.activity, type }],
+    });
+  } catch (e) {
+    console.error('Could not set presence:', e.message);
+  }
 
   const commands = require('./commands');
   commands.register(client).catch((e) => console.error('Command register error:', e));
@@ -57,6 +68,10 @@ client.once(Events.ClientReady, () => {
 
 client.on(Events.InteractionCreate, (interaction) => {
   require('./commands').handleInteraction(interaction, client, config, storage);
+});
+
+client.on(Events.MessageCreate, (message) => {
+  require('./prefix').handleMessage(message, client, config, storage);
 });
 
 // =========================================================
